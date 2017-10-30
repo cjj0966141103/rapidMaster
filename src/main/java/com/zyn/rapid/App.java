@@ -24,6 +24,8 @@ public class App {
         //		g.generateByTable("function");
         //生成部分表
         //g.generateByTable("");
+        
+        
         //Runtime.getRuntime().exec("cmd.exe /c start " + GeneratorProperties.getRequiredProperty("outRoot"));
     }
 }

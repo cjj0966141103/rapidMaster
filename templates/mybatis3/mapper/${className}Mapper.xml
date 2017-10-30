@@ -1,0 +1,114 @@
+<#include "/macro.include"/>
+<#assign className = table.className>
+<#assign classNameFirstLower = table.classNameFirstLower>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<#macro mapperEl value>${r"#{"}${value}}</#macro>
+<#macro namespace>${className}.</#macro>
+
+<mapper namespace="${basepackage}.entity.rest.${className}">
+	<resultMap id="Base${className}Map" type="${basepackage}.entity.rest.${className}">
+         <#list table.columns as column>
+        <result property="${column.columnNameLower}" column="${column.sqlName}" />
+		</#list>
+	</resultMap>
+
+	<sql id="${className}Columns">
+	<![CDATA[
+       	<#list table.columns as column>${column.sqlName}<#if column_has_next>,</#if></#list>
+	]]>
+	</sql>
+
+
+	<select id="getById" resultMap="Base${className}Map">
+	SELECT <include refid="${className}Columns" />
+		FROM ${table.sqlName} WHERE <#list table.compositeIdColumns as column> ${column.sqlName} = <@mapperEl 'id'/> <#if column_has_next> AND </#if></#list>
+	</select>
+
+	<insert id="save" parameterType="${basepackage}.entity.rest.${className}" useGeneratedKeys="true" keyProperty="<#list table.compositeIdColumns as column>${column.columnNameLower}</#list>">
+        INSERT INTO ${table.sqlName} (
+        <#list table.columns as column>
+        	${column.sqlName} <#if column_has_next>,</#if>
+        </#list>
+        ) VALUES (
+        <#list table.columns as column>
+        	<@mapperEl column.columnNameFirstLower/> <#if column_has_next>,</#if>
+        </#list>
+        )
+	</insert>
+
+	<update id="update" parameterType="${basepackage}.entity.rest.${className}">
+		UPDATE ${table.sqlName}
+        SET
+        <#list table.compositeIdColumns as column>
+            <if test="${column.columnNameLower}  != null">
+                ${column.sqlName} = <@mapperEl column.columnNameLower/>
+            </if>
+        </#list>
+		<#list table.notPkColumns as column>
+			<if test="${column.columnNameLower} != null">
+				,${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+			</if>
+		</#list>
+		WHERE
+		<#list table.compositeIdColumns as column>
+			${column.sqlName} = <@mapperEl column.columnNameLower/> <#if column_has_next> AND </#if>
+		</#list>
+	</update>
+
+	<delete id="delete" parameterType="java.lang.Integer">
+	DELETE FROM ${table.sqlName} WHERE
+	<#list table.compositeIdColumns as column>
+	${column.sqlName} = <@mapperEl 'id'/> <#if column_has_next> AND </#if>
+		</#list>
+	</delete>
+
+
+	<sql id="common_query_condition_entity">
+		<where>
+			<#list table.compositeIdColumns as column>
+			<if test="${column.columnNameLower} != null">
+				${column.sqlName} = <@mapperEl column.columnNameLower/>
+			</if>
+			</#list>
+			<#list table.notPkColumns as column>
+			<#if column.isDateTimeColumn>
+			<#else>
+			<if test="${column.columnNameFirstLower} != null">
+				AND ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+			</if>
+		</#if>
+		</#list>
+		</where>
+	</sql>
+
+
+	<select id="queryListByMap" parameterType="map" resultMap="Base${className}Map">
+		SELECT <include refid="${className}Columns" />
+		FROM ${table.sqlName}
+		<include refid="common_query_condition_map" />
+	</select>
+
+	<select id="listPageByEntity" parameterType="${basepackage}.entity.rest.${className}" resultMap="Base${className}Map">
+		SELECT <include refid="${className}Columns" />
+		FROM ${table.sqlName}
+		<include refid="common_query_condition_entity" />
+	</select>
+
+
+	<select id="listPageByMap" parameterType="map" resultMap="Base${className}Map">
+		SELECT <include refid="${className}Columns" />
+		FROM ${table.sqlName}
+		<include refid="common_query_condition_map" />
+	</select>
+
+
+	<select id="queryListByEntity" parameterType="${basepackage}.entity.rest.${className}" resultMap="Base${className}Map">
+		SELECT
+		<include refid="${className}Columns"/>
+		FROM ${table.sqlName}
+		<include refid="common_query_condition_entity"/>
+	</select>
+
+</mapper>

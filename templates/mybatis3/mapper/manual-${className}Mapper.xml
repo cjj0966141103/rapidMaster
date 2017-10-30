@@ -1,0 +1,30 @@
+<#include "/macro.include"/>
+<#assign className = table.className>
+<#assign classNameFirstLower = table.classNameFirstLower>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<#macro mapperEl value>${r"#{"}${value}}</#macro>
+<#macro namespace>${className}.</#macro>
+
+<mapper namespace="${basepackage}.entity.rest.${className}">
+
+    <sql id="common_query_condition_map">
+        <where>
+        <#list table.compositeIdColumns as column>
+        <if test="${column.columnNameLower} != null">
+            ${column.sqlName} = <@mapperEl column.columnNameLower/>
+        </if>
+        </#list>
+        <#list table.notPkColumns as column>
+        <#if column.isDateTimeColumn>
+        <#else>
+        <if test="${column.columnNameFirstLower} != null">
+            AND ${column.sqlName} = <@mapperEl column.columnNameFirstLower/>
+        </if>
+        </#if>
+        </#list>
+        </where>
+    </sql>
+</mapper>
